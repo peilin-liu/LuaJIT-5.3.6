@@ -25,8 +25,8 @@ void Y_initjitstate (lua_State *L) {
   g->Y_jitstate->Y_c2miropts.message_file = stderr;
   g->Y_jitstate->Y_c2miropts.module_num = 0;
   g->Y_jitstate->Y_jitrunning = 1;
-  g->Y_jitstate->Y_limitsize = 100;
-  g->Y_jitstate->Y_limitcount = 50;
+  g->Y_jitstate->Y_limitsize =  24;
+  g->Y_jitstate->Y_limitcount = 1;
   g->Y_jitstate->Y_jitcount = 0;
 }
 
@@ -1029,10 +1029,13 @@ int Y_compile (lua_State *L, Proto *p) {
   if (status == YJIT_MUST_COMPILE) {
     tocompile = 1;
   } else if (p->sizecode > g->Y_jitstate->Y_limitsize && 
-      p->Y_jitproto->Y_execcount > g->Y_jitstate->Y_limitcount) {
+    p->Y_jitproto->Y_execcount > g->Y_jitstate->Y_limitcount) {
     tocompile = 1;
+  } else if(g->Y_jitstate->Y_limitsize != 0 && p->sizecode <= g->Y_jitstate->Y_limitsize) {
+    p->Y_jitproto->Y_jitstatus = YJIT_CANT_COMPILE;
   }
   if (!tocompile) return 0;
+  printf("Y_compile gen jit function %s %d\n", getstr(p->source), p->linedefined);
   int is_success = 1;
   MIR_context_t ctx = g->Y_jitstate->Y_mirctx;
   c2mir_init(ctx);

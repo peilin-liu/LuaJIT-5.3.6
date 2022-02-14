@@ -462,12 +462,13 @@ int luaD_precall (lua_State *L, StkId func, int nresults, int need_adjust) {
       if (L->hookmask & LUA_MASKCALL)
         callhook(L, ci);
       YJIT_Status status = p->Y_jitproto->Y_jitstatus;
-      if (G(L)->mainthread == L && g->Y_jitstate->Y_jitrunning) {
-        if (status != YJIT_IS_COMPILED && status != YJIT_CANT_COMPILE) {
+      if (status != YJIT_CANT_COMPILE && G(L)->mainthread == L && g->Y_jitstate->Y_jitrunning) {
+        if (status != YJIT_IS_COMPILED ) {
           if (Y_compile(L, p)) g->Y_jitstate->Y_jitcount ++;
         }
         if (p->Y_jitproto->Y_jitfunc != NULL) {
           ci->u.l.savedpc ++;
+          //printf("luaD_precall precall jit function %s %d, nCcalls %d\n", getstr(p->source), p->linedefined, L->nCcalls);
           if (++L->nCcalls >= LUAI_MAXCCALLS) {
             if (L->nCcalls == LUAI_MAXCCALLS) {
               luaG_runerror(L, "stack overflow");
@@ -477,6 +478,7 @@ int luaD_precall (lua_State *L, StkId func, int nresults, int need_adjust) {
             }
           }
           L->nny ++;
+          //printf("luaD_precall call jit function %s %d, nCcalls %d\n", getstr(p->source), p->linedefined, L->nCcalls);
           n = (*p->Y_jitproto->Y_jitfunc)(L); /* poscall will be executed inside */
           L->nny --;
           L->nCcalls --;
